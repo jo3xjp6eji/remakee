@@ -1,0 +1,576 @@
+import random
+import copy#deepcopy使複製後的串列中的串列不受其影響
+import traceback
+color=["m","s","p","z"]
+word=["東","南","西","北","白","發","中"]
+sortt=["1m","2m","3m","4m","5m","6m","7m","8m","9m","1s","2s","3s","4s","5s","6s","7s","8s","9s","1p","2p","3p","4p","5p","6p","7p","8p","9p","1z","2z","3z","4z","5z","6z","7z"]
+sorttt=["2m","3m","4m","5m","6m","7m","8m","9m","1m","2s","3s","4s","5s","6s","7s","8s","9s","1s","2p","3p","4p","5p","6p","7p","8p","9p","1p","2z","3z","4z","5z","6z","7z","1z"]#指示寶牌用
+dora=[]#寶牌
+wangpai=[]#寶牌指示牌10張加上嶺上牌4張
+hand1=[[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0]]#手牌，數字為數量，索引為數字種類，4區分別為3色+字牌
+hand2=[[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0]]
+hand3=[[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0]]
+hand4=[[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0]]
+discard1=[]
+discard2=[]
+discard3=[]
+discard4=[]
+fulu1=[[[],[],[]],[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]]#四個區域分別為吃 碰 明槓 暗槓(加槓會從碰轉移到明槓)，每個區域再分四種顏色(除吃牌無字牌區)
+fulu2=[[[],[],[]],[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]]
+fulu3=[[[],[],[]],[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]]
+fulu4=[[[],[],[]],[[],[],[],[]],[[],[],[],[]],[[],[],[],[]]]
+fulu=False#用於標示是否鳴牌，若鳴牌則不摸牌
+kong=False#若為槓後補牌時自摸，會有"嶺上開花"這個役，用kong標示
+kkong=False#若加槓時放銃會有"搶槓"這個役 用kkong標示
+start=False#前面的抽牌不用檢查是否自摸
+ron=False#判斷是否為榮和
+ankong1=[]
+ankong2=[]
+ankong3=[]
+ankong4=[]
+handd1=[[],[],[],[]]#顯示手牌時用到(printhand函數中會用到)
+handd2=[[],[],[],[]]
+handd3=[[],[],[],[]]
+handd4=[[],[],[],[]]
+player1=[hand1,discard1,fulu1,ankong1,handd1]
+player2=[hand2,discard2,fulu2,ankong2,handd2]
+player3=[hand3,discard3,fulu3,ankong3,handd3]
+player4=[hand4,discard4,fulu4,ankong4,handd4]
+whole=[player1,player2,player3,player4]
+aaa=0#標示是誰的回合，0 1 2 3
+def printhand(player):#顯示手牌
+    d=[]
+    whole[player][4][3].sort()
+    for element in whole[player][4][3]:
+        d.append(word[int(element)-1])
+    for bbb in range(3):
+        whole[player][4][bbb].sort()#顯示時再排列
+        if whole[player][4][0]==[]:
+            a=""
+        else:
+            a=whole[player][4][0],"m"
+        if whole[player][4][1]==[]:
+            b=""
+        else:
+            b=whole[player][4][1],"s"
+        if whole[player][4][2]==[]:
+            c=""
+        else:
+            c=whole[player][4][2],"p"
+        if d==[]:
+            d=""
+    print(a,b,c,d)
+def chi(card):
+    if card[1]=="z":
+        return [False,[]]
+    colorr=card[1]
+    num=int(card[0])-1#索引從0開始
+    listt=[]
+    if num!=0 and num!=8:#數字非19
+        if whole[(aaa+1)%4][0][color.index(colorr)][num-1]!=0 and  whole[(aaa+1)%4][0][color.index(colorr)][num+1]!=0:#檢查數字前後是否存在ex:card=2s 檢查1s 3s
+            listt.append([num,num+2])#回傳非索引 要加回來
+    if num!=0 and num!=1:
+        if whole[(aaa+1)%4][0][color.index(colorr)][num-1]!=0 and  whole[(aaa+1)%4][0][color.index(colorr)][num-2]!=0:#檢查數字前兩數字是否存在ex:card=3s 檢查1s 2s
+            listt.append([num,num-1])
+    if num!=7 and num!=8:
+        if whole[(aaa+1)%4][0][color.index(colorr)][num+2]!=0 and  whole[(aaa+1)%4][0][color.index(colorr)][num+1]!=0:#檢查數字後兩數字是否存在ex:card=1s 檢查2s 3s
+            listt.append([num+3,num+2])
+    if listt==[]:
+        return [False,[]]
+    else:
+        return[True,listt]
+def ponkong(card):#碰 槓兩者邏輯相同，因此放在同個函數 減少程式碼長度
+    num=int(card[0])-1
+    colorr=card[1]
+    player=4#玩家數字為0~3，若沒有改掉則代表沒有人能碰牌
+    playerr=4#玩家數字為0~3，若沒有改掉則代表沒有人能槓牌
+    if whole[(aaa+1)%4][0][color.index(colorr)][num]==2:
+        player=(aaa+1)%4
+        if whole[(aaa+1)%4][0][color.index(colorr)][num]==3:
+            playerr=(aaa+1)%4
+    if whole[(aaa+2)%4][0][color.index(colorr)][num]==2:
+        player=(aaa+2)%4
+        if whole[(aaa+1)%4][0][color.index(colorr)][num]==3:
+            playerr=(aaa+1)%4
+    if whole[(aaa+3)%4][0][color.index(colorr)][num]==2:#檢查是否有人可碰牌
+        player=(aaa+3)%4
+        if whole[(aaa+1)%4][0][color.index(colorr)][num]==3:
+            playerr=(aaa+1)%4
+    if player==4:
+        return [False,"no",4]
+    elif playerr==4:
+        return [True,"pon",player]
+    else:
+        return[True,"kong",player]#player跟playerr一樣
+def draw(card,player):
+    whole[player][0][color.index(card[1])][int(card[0])-1]+=1
+    if whole[player][0][color.index(card[1])][int(card[0])-1]==4:
+        whole[player][3].append(card)
+    whole[player][4][color.index(card[1])].append(int(card[0]))
+    if start:
+        checkxx(whole[player][0],color.index(card[1])*10+int(card[0])-1)
+def scoree(y,z,aa,player,hand,bb):#分別為順子 刻子 對子的拆法和玩家及其手牌及特殊情況 ，前兩個分別為[[],[],[]] [[],[],[],[]]，不同位置不同顏色，順序m s p z ，順子為0~6 分別為123~789，刻子為0~8，為索引，對子為二位數，十位為顏色索引(0 1 2 3) 個位為數字索引 最後一個為數字0表示正常 1表示七對子 2表示國士無雙
+    yakuman=[]#役滿不複合其他牌型(除了累計役滿)
+    if bb==1:
+        yaku.append("七對子")
+        fan+=2
+        fu=25
+        if hand[0][0]+hand[0][8]+hand[1][0]+hand[1][8]+hand[2][0]+hand[2][8]==0:
+            yaku.append("斷么九")
+            fan+=1
+    if bb==2:
+        yakuman.append("國士無雙")
+    onenine=[[0,6],[0,8]]
+    yaku=[]#役種 顯示用
+    fan=0#計算翻數
+    fu=20#符數
+    fulu=whole[2]
+    a=fulu[0]#吃
+    b=fulu[1]#碰
+    c=fulu[2]#明槓
+    d=fulu[3]#暗槓
+    shen=y[0]+y[1]+y[2]+a[0]+a[1]+a[2]#順子(不分顏色)
+    mingke=b[0]+b[1]+b[2]+b[3]#明刻(不分顏色)
+    anke=z[0]+z[1]+z[2]+z[3]#暗刻(不分顏色)
+    mingkong=c[0]+c[1]+c[2]+c[3]#明槓(不分顏色)
+    ankong=d[0]+d[1]+d[2]+d[3]#暗槓(不分顏色)
+    ke=[mingke[0]+anke[0]+mingkong[0]+ankong[0],mingke[1]+anke[1]+mingkong[1]+ankong[1],mingke[2]+anke[2]+mingkong[2]+ankong[2],mingke[3]+anke[3]+mingkong[3]+ankong[3]]
+    kee=ke[0]+ke[1]+ke[2]+ke[3]#不分顏色
+    m=[[],[],[],[],[]]#吃 明刻 暗刻 明槓 暗槓
+    s=[[],[],[],[],[]]
+    p=[[],[],[],[],[]]
+    z=[[],[],[],[]]#沒有順子
+    m[0]=a[0]+y[0];m[1]=b[0];m[2]=z[0];m[3]=c[0];m[4]=d[0]
+    s[0]=a[1]+y[1];m[1]=b[1];m[2]=z[1];m[3]=c[1];m[4]=d[1]
+    p[0]=a[2]+y[2];m[1]=b[2];m[2]=z[2];m[3]=c[2];m[4]=d[2]
+    if 0 not in shen and 6 not in shen and 0 not in kee and 8 not in kee and not bb:
+        yaku.append("斷么九")
+        fan+=1
+    if kong:
+        yaku.append("嶺上開花")
+        fan+=1
+    if drawpile==[]:
+        if ron:
+            yaku.append("河底撈魚")
+            fan+=1
+        else:
+            yaku.append("海底摸月")
+            fan+=1
+    if fan<6:
+        score=fu*(2**(fan+2))
+        if score>2000:
+            score=2000
+    elif fan<8:
+        score=3000 
+    elif fan<11:
+        score=4000
+    elif fan<13:
+        score=6000
+    else:
+        score=8000
+def checks(numlist):#檢查順子 回傳[布林值，順子拆法(若前為False則為空串列)]
+    try:
+        v=[]#保存拆法，0=123 1=234..6=789
+        numlistt=copy.deepcopy(numlist)
+        for a in range(7):
+            b=numlistt[a]
+            if b>-1:
+                numlistt[a]-=b;numlistt[a+1]-=b;numlistt[a+2]-=b
+                for w in range(b):
+                    v.append(a)
+            elif b<0:
+                return [False,[]]
+        if numlistt[7]==0 and numlistt[8]==0:
+            return [True,v]
+        else:
+            return [False,[]]
+    except Exception as errorrr:
+        print(errorrr)
+        print(traceback.format_exc())
+        breakpoint()
+def checkxx(numhand,card):#檢查是否和牌，card為放銃牌/自摸牌 影響符數 以兩位數代表 十位為顏色索引 個位為數字索引
+    try:
+        numhandd=copy.deepcopy(numhand)
+        c=0;d=0;e=0;bp=1;bs=-1#bp判斷國士無雙 應有12種1張及1種兩張 bs儲存位置
+        if numhandd[0].count(2)+numhandd[1].count(2)+numhandd[2].count(2)+numhandd[3].count(2)==7:
+            scoree([],[],[],[],[numhandd],1)
+        onenine=[]
+        for bq in range(7):
+            onenine.append(numhand[3][bq])
+        onenine.append(numhandd[0][0]);onenine.append(numhandd[0][8]);onenine.append(numhandd[1][0]);onenine.append(numhandd[1][8]);onenine.append(numhandd[2][0]);onenine.append(numhandd[2][8])
+        for br in range(len(onenine)):
+            if onenine[br]!=1:
+                bp-=1
+                bs=br
+        if bp==0:
+            if onenine[bs]==2:
+                scoree([],[],[],[],[],[numhandd],2)
+        if numhandd[3].count(2)>1 or numhandd[3].count(4) or numhandd[3].count(1):#字牌只能為對子或刻子
+            return False
+        if numhandd[3].count(2)==1:
+            t=[tryy(numhandd[0]),tryy(numhandd[1]),tryy(numhandd[2])]   #try回傳串列，元素為[剩下數字，暗刻位置] 如[[n,a],[n,a]] [[n,a]]
+            ae=[[],[],[]]           #保留暗刻位置
+            x=[[],[],[]]            #保存三色和牌型之順子拆法
+            for r in range(3):      #顏色
+                for u in range(len(t[r])):      #t中為多種可能，用u標示取到哪裡
+                    y=checks(t[r][u][0])        #checks回傳[布林值，順子拆法(若前為False則為空串列)]
+                    if y[0]:
+                        x[r].append(y[1])       #順子拆法
+                        ae[r].append(t[r][u][1])   #暗刻位置
+            if x[0] and x[1] and x[2]:
+                scorelist=[]#儲存分數(取高)
+                if ron:
+                    for ab in range(len(x[0])):
+                        for ac in range(len(x[1])):
+                            for ad in range(len(x[2])):
+                                scorelist.append(scoree([x[0][ab],x[1][ac],x[2][ad]],ae,3*10+numhandd[3].index(2),(aaa+1+bh),numhand,card,0))       #scoree結算分數
+            else:
+                scorelist=[]#儲存分數(取高)
+                for ab in range(len(x[0])):
+                    for ac in range(len(x[1])):
+                        for ad in range(len(x[2])):
+                            scorelist.append(scoree([x[0][ab],x[1][ac],x[2][ad]],ae,3*10+numhandd[3].index(2),aaa,numhand,card,0))       #scoree結算分數
+        else:
+            for f in range(3):
+                for g in range(9):#數字分為147 258 369三區，順子各區必各用一個數字，因此可得知對子位置(g0~8 分別對應1~9)
+                    if g%3==0:
+                        c+=numhandd[f][g]#147
+                    elif g%3==1:
+                        d+=numhandd[f][g]#258
+                    else:
+                        e+=numhandd[f][g]#369
+            if c==d:
+                h=2
+            elif d==e:
+                h=0
+            elif c==e:
+                h=1
+            else:
+                return False
+            ag=[[],[],[]]                   #標示可拆為對子的位置
+            for ai in range(3):             #顏色
+                for  aj in range(3):        #隔三個取一次
+                    if numhandd[ai][aj*3+h]>1:
+                        ag[ai].append(aj*3+h)
+            for ah in range(3):             #顏色
+                for af in range(len(ag[ah])):#對子位置
+                    numhandd[ah][ag[ah][af]]-=2
+                    ak=[[],[],[]]               #保留暗刻位置
+                    al=[[],[],[]]               #保存三色和牌型之順子拆法
+                    am=[tryy(numhandd[0]),tryy(numhandd[1]),tryy(numhandd[2])]  #try回傳串列，元素為[剩下數字，暗刻位置]
+                    for an in range(3):                 #顏色
+                        for ao in range(len(am[an])):    #am中為多種可能，用ao標示取到哪裡
+                            ap=checks(am[an][ao][0])    #checks回傳[布林值，順子拆法(若前為False則為空串列)]
+                            if ap[0]:
+                                al[an].append(ap[1])     #順子拆法
+                                ak[an].append(am[an][ao][1]) #暗刻位置
+                    if ron:
+                        scorelist=[]#儲存分數(取高)
+                        if al[0] and al[1] and al[2]:
+                            for aq in range(len(al[0])):
+                                for ar in range(len(al[1])):
+                                    for at in range(len(al[2])):
+                                        scorelist.append(scoree([al[0][aq],al[1][ar],al[2][at]],ak,ah*10+ag[ah][af],(aaa+1+bh),numhand,card,0)) #scoree結算分數
+                    else:
+                        scorelist=[]#儲存分數(取高)
+                        if al[0] and al[1] and al[2]:
+                            for aq in range(len(al[0])):
+                                for ar in range(len(al[1])):
+                                    for at in range(len(al[2])):
+                                        scorelist.append(scoree([al[0][aq],al[1][ar],al[2][at]],ak,ah*10+ag[ah][af],aaa,numhand,card,0)) #scoree結算分數
+                    numhandd[ah][ag[ah][af]]+=2
+        if scorelist:
+            score=max(scorelist)
+            if score<8000:
+                textt=""
+            elif score==2000:
+                textt="滿貫"
+            elif score==3000:
+                textt="跳滿"
+            elif score==4000:
+                textt="倍滿"
+            elif score==6000:
+                textt="三倍滿"
+            elif score==8000:
+                textt="役滿"
+            if ron:
+                if aaa+1+bh==0:
+                    score*=6#放銃莊家 6倍基本分
+                else:
+                    score*=4#放銃閒家 4倍基本分
+            elif aaa==0:
+                score*=2
+            else:
+                playerr=[(aaa+1)%4,(aaa+2)%4,(aaa+3)%4]
+                playerr.remove(0)
+            if ron:
+                print("玩家"+str(aaa+1)+"榮和玩家"+str(aaa+2+bh))
+                print(str(score)+"點",textt)
+                print("玩家"+str(aaa+1)+"支付"+str(score)+"點給玩家"+str(aaa+2+bh)+"打出的"+card)
+            else:
+                print("玩家"+str(aaa)+"自摸"+card)
+                if aaa==0:
+                    print(str(score*3),textt)
+                    print("其餘玩家每人支付"+str(score)+"給玩家1")
+                else:
+                    print(str(score*4),textt)
+                    print("玩家1支付"+str(score*2)+"點，","玩家"+str(playerr[0]+1)+"和玩家"+str(playerr[1]+1)+"支付"+str(score)+"點給玩家"+str(aaa+1))
+    except Exception as errorrr:
+        print(errorrr)
+        print(traceback.format_exc())
+        breakpoint()
+
+
+    '''
+            t=[tryy(numhandd[0]),tryy(numhandd[1]),tryy(numhandd[2])]   #try回傳串列，元素為[剩下數字，暗刻位置]
+            ae=[[],[],[]]           #保留暗刻位置
+            x=[[],[],[]]            #保存三色和牌型之順子拆法
+            for r in range(3):
+                for u in range(len(t[r])):
+                    y=checks(t[r][u][0])
+                    if y[0]:
+                        x[r].append(y[1])
+                        ae[r].append(t[r][1])
+            if x[0] and x[1] and x[2]:
+                for ab in range(len(x[0])):
+                    for ac in range(len(x[1])):
+                        for ad in range(len(x[2])):
+                            scoree([x[0][ab],x[1][ac],x[2][ad]],ae,3*10+numhandd[3].index(2)
+    '''
+def tryy(numlist0):             #回傳串列，元素為[剩下數字，暗刻位置]
+    q=[]                        #保存各種拆法拆完後之串列
+    s=[]                        #保存暗刻位置
+    for a in range(len(numlist0)):
+        numlist0[a]=int(numlist0[a])
+    numlist1=copy.deepcopy(numlist0)
+    i=numlist1.count(3)+numlist1.count(4)
+    if not i:                   #若沒有數字多於三張，直接回傳
+        return [[numlist1,[]]]
+    l=[]                        #保存能拆作刻子的位置
+    m=0                         #python 的index函數無法多次尋找，因此用m標示上次找到位置
+    for n in range(numlist1.count(3)):
+        l.append(numlist1.index(3,m))
+        m=numlist1.index(3,m)+1 #起始位置可被尋找，+1避免重複
+    for o in range(numlist1.count(4)):
+        l.append(numlist1.index(4,m))
+        m=numlist1.index(3,m)+1
+    l.sort()
+    for j in range(2**i):
+        p=0                    #標示次數
+        for bj in range(i-len(bin(j)[2-len(str(bin(j))):-1]+str(bin(j))[-1])):#前面補0，ex:i=4 10變成0010
+            p+=1
+        for k in bin(j)[2-len(str(bin(j))):-1]+str(bin(j))[-1]:#轉二進位，其中0為不拆，1為拆
+            if k=="1":
+                numlist1[l[p]]-=3
+                s.append(l[p])
+            p+=1
+        q.append([copy.deepcopy(numlist1),copy.deepcopy(s)])
+        numlist1=copy.deepcopy(numlist0)
+        s=[]
+    return q
+def ankongx(card,player):
+    global kong;kong=True
+    whole[player][2][3][color.index(card[1])].append(int(card[0]))
+    whole[player][0][color.index(card[1])][int(card[0])-1]-=4
+    draw(wangpai[0],player)
+    whole[player][3].remove(card)
+    dora.append(sorttt[sortt.index(wangpai[0])])
+    print("寶牌是"+dora[-1])
+    del wangpai[0]
+    print("玩家"+str(player+1)+"抽到了"+card)
+drawpile=[]
+for au in range(34):
+    drawpile.append(sortt[au]) #34種牌
+drawpile=drawpile*4
+random.shuffle(drawpile)
+for aw in range(4):     #玩家
+    for ax in range(13):#起手13張牌
+        draw(drawpile[0],aw)
+        del(drawpile[0])
+wangpai=drawpile[0:14]
+del(drawpile[0:14])
+dora.append(sorttt[sortt.index(wangpai[0])])#寶牌
+print("寶牌是"+dora[-1])
+del(wangpai[0])
+print("遊戲開始")
+print("輸入牌的格視為數字+顏色(m萬 s索 p筒)(如2s、5m)或輸入字牌(如東、北)，輸入錯誤需重新輸入")
+start=True
+bb="temp"#防止not define
+try:
+    while True:
+        if drawpile==[]:
+            print("荒牌流局")
+        else:
+            if not fulu and bb!="D":
+                print("現在是玩家"+str(aaa+1)+"的回合")
+                draw(drawpile[0],aaa)
+                if drawpile[0][1]=="z":
+                    text=word[int(drawpile[0][0])-1]
+                else:
+                    text=drawpile[0]
+                print("玩家"+str(aaa+1)+"抽到了"+text)
+                del drawpile[0]
+            if whole[aaa][3]!=[]:
+                if len(whole[aaa][3])==1:
+                    ay=whole[aaa][3][0]
+                    az="是"
+                else:
+                    list1=[]
+                    for elements in whole[aaa][3]:
+                        if elements[1]=="z":
+                            list1.append(word[int(elements[0])-1])
+                        else:
+                            list1.append(elements)
+                    ay="這些牌"+str(list1)
+                    az="要暗槓的牌"
+                print("這是你的手牌")
+                printhand(aaa)
+                while True:#用於防止輸入錯誤 後面的while True都是同此處用法
+                    ba=input("你可以暗槓"+ay+"，輸入"+az+"或否")
+                    if ba=="否":
+                        break
+                    if az=="是" and ba=="是":
+                        ankongx(ay,aaa)
+                        del(wangpai[0])
+                        break
+                    if az=="要暗槓的牌" and (ba in whole[aaa][3] and ba[1]!="z"):
+                        ankongx(ba,aaa)
+                        del(wangpai[0])
+                        break
+                    if az=="要暗槓的牌" and ba in word:
+                        if str(word.index(ba))+"z" in whole[aaa][3]:
+                            ankongx(str(word.index(ba))+"z",aaa)
+                            del(wangpai[0])
+                            break
+                    print("輸入格式錯誤")
+                kong=False
+            printhand(aaa)
+            fulu=False
+            for bk in range(4):
+                for bm in range(len(whole[aaa][2][1][bk])):#加槓
+                    if whole[aaa][0][bk][whole[aaa][2][1][bk][bm]]==1:
+                        nnum=whole[aaa][2][1][bk][bm]
+                        colorr=bk
+                        print("你可以加槓"+str(nnum+1)+color[colorr])
+                        while True:
+                            bn=input("輸入是或否")
+                            if bn=="是" or bn=="否":
+                                break
+                            print("輸入格式錯誤")
+                        if bn=="是":
+                            kkong=True
+                            for bo in range(3):
+                                llist=whole[(aaa+1+bo)%4][0]
+                                llist[colorr][nnum]+=1
+                                checkxx(llist)
+                            kkong=False
+                            kong=True
+                            whole[2][2][colorr].append(nnum)
+                            del(whole[2][1][bk][bm])
+                            draw(wangpai[0],aaa)
+                            del(wangpai[0])
+                            dora.append(sorttt[sortt.index(wangpai[0])])
+                            print("寶牌為"+dora[-1])
+                            kong=False
+            while True:
+                bb=input("輸入你要打出的牌，或輸入D查看捨牌")
+                if len(bb)!=2:
+                    if bb  in word or bb=="D":
+                        break
+                if bb in sortt and bb[1]!="z":
+                    break
+                print("輸入格式錯誤")
+            if len(bb)==1:#為字牌:
+                if bb!="D":
+                    bb=str(word.index(bb)+1)+"z"
+                else:
+                    print("玩家1捨牌: "+str(discard1)+"玩家2捨牌: "+str(discard2)+"玩家3捨牌: "+str(discard3)+"玩家4捨牌: "+str(discard4))
+                    continue
+            whole[aaa][0][color.index(bb[1])][int(bb[0])-1]-=1
+            whole[aaa][4][color.index(bb[1])].remove(int(bb[0]))
+            ron=True
+            for bh in range(3):
+                list2=copy.deepcopy(whole[(aaa+1+bh)%4][0])#把捨牌分別加上其餘三人的手牌，判斷是否為和牌型
+                list2[color.index(bb[1])][int(bb[0])-1]+=1
+                checkxx(list2,color.index(bb[1])*10+int(bb[0])-1)
+            ron=False
+            be=ponkong(bb)#回傳[bool,word,player]，其中bool表是否能碰 word可為no pon kong 分別為不能碰 可碰 可碰槓 player表能碰牌的人(0 1 2 3其一)，若沒人可碰牌則為4
+            if be[0]==True:
+                if be[1]=="pon":
+                    print("玩家"+str(be[2]+1)+"可以碰牌")
+                    print("這是你的手牌")
+                    printhand(be[2])
+                    while True:
+                        bf=input("輸入碰或跳過")
+                        if bf=="碰" or bf=="跳過":
+                            break
+                        print("輸入格式錯誤")
+                elif be[1]=="kong":
+                    print("玩家"+str((be[2]+1)%4)+"可以碰牌或槓牌")
+                    print("這是你的手牌")
+                    printhand(be[2])
+                    while True:
+                        bf=input("輸入碰或槓或跳過")
+                        if bf=="碰" or bf=="槓" or bf=="跳過":
+                            break
+                if bf=="碰":
+                    whole[be[2]][0][color.index(bb[1])][int(bb[0])-1]-=2
+                    for bi in range(2):
+                        whole[be[2]][4][color.index(bb[1])].remove(int(bb[0]))
+                    whole[be[2]][2][1][color.index(bb[1])].append(int(bb[0]))
+                    fulu=True
+                    aaa=be[2]
+                if bf=="槓":
+                    whole[be[2]][0][color.index(bb[1])][int(bb[0])-1]-=3
+                    for bj in range(3):
+                        whole[be[2]][4][color.index(bb[1])].remove(int(bb[0]))
+                    whole[be[2]][2][1][color.index(bb[1])].append(int(bb[0]))
+                    fulu=True
+                    aaa=be[2]
+            if not fulu:#被碰的牌不能吃
+                bc=chi(bb)#回傳[bool，串列]，其中串列為可吃牌之組合，ex:[[1,3],[3,4]]
+                if bc[0]:
+                    print("玩家"+str((aaa+1)%4+1)+"可以吃牌")
+                    print("這是你的手牌")
+                    printhand((aaa+1)%4)
+                    if len(bc[1])==1:
+                        while True:
+                            bd=input("選擇是否吃牌，輸入是或否")
+                            if bd=="是" or bd=="否":
+                                break
+                            print("輸入格式錯誤")
+                    else:
+                        while True:
+                            bd=input("輸入要用來吃牌的組合，格式為兩數字相連(不必輸入顏色)，或輸入跳過")
+                            if bd=="跳過":
+                                break
+                            if str(bd).isnumeric():
+                                if len(bd)==2:
+                                    bd=int(bd)
+                                    if [bd//10,bd%10] in bc[1] or [bd%10,bd//10] in bc[1]:#//10即取十位數 %10即取個位數
+                                        break
+                            print("輸入格式錯誤")
+                    if bd=="是":
+                        bg=[bc[1][0][0],bc[1][0][1],int(bb[0])]
+                        whole[(aaa+1)%4][0][color.index(bb[1])][bc[1][0][0]-1]-=1
+                        whole[(aaa+1)%4][0][color.index(bb[1])][bc[1][0][1]-1]-=1
+                        whole[(aaa+1)%4][4][color.index(bb[1])].remove(int(bc[1][0][0]))
+                        whole[(aaa+1)%4][4][color.index(bb[1])].remove(int(bc[1][0][1]))
+                        whole[(aaa+1)%4][2][0][color.index(bb[1])].append(min(bc[1][0][0],bc[1][0][1],int(bb[0]))-1)#如123以0表示，即最小值減1
+                        fulu=True
+                        aaa=(aaa+1)%4
+                    elif str(bd).isnumeric():
+                        whole[(aaa+1)%4][0][color.index(bb[1])][bd//10-1]-=1
+                        whole[(aaa+1)%4][0][color.index(bb[1])][bd%10-1]-=1
+                        whole[(aaa+1)%4][4][color.index(bb[1])].remove(bd//10)
+                        whole[(aaa+1)%4][4][color.index(bb[1])].remove(bd%10)
+                        whole[(aaa+1)%4][2][0][color.index(bb[1])].append(min(bd//10,bd%10,int(bb[0]))-1)
+                        fulu=True
+                        aaa=(aaa+1)%4
+            if not fulu:
+                whole[aaa][1].append(bb)
+                aaa=(aaa+1)%4
+except Exception as errorrr:
+    print(errorrr)
+    print(traceback.format_exc())
+    breakpoint()

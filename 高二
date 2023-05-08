@@ -1,0 +1,188 @@
+import random
+a=[]
+for i in range(8):
+ for j in range(13-i):
+ a.append(1+i)
+for k in range(4):
+ a.append("joker")
+random.shuffle(a)
+hand1=a[0:7]
+secertcard1=[]
+drawpile1=a[7:20]
+money1=0
+score1=0
+item1=[0,0]
+hand2=a[20:27]
+secertcard2=[]
+drawpile2=a[27:40]
+money2=0
+score2=0
+item2=[0,0]
+hand3=a[40:47]
+secertcard3=[]
+drawpile3=a[47:60]
+money3=0
+score3=0
+item3=[0,0]
+hand4=a[60:67]
+secertcard4=[]
+drawpile4=a[67:80]
+money4=0
+score4=0
+item4=[0,0]
+player1=[hand1,secertcard1,drawpile1,money1,score1,item1]
+player2=[hand2,secertcard2,drawpile2,money2,score2,item2]
+player3=[hand3,secertcard3,drawpile3,money3,score3,item3]
+player4=[hand4,secertcard4,drawpile4,money4,score4,item4]
+whole=[player1,player2,player3,player4]
+nowplayernumber=0
+def check(number0):
+ if (number0 in whole[nowplayernumber][0]) ==True:
+ return 1
+ else:
+ print(number0)
+ print(whole[nowplayernumber][0])
+ print("wrong")
+for x in range(4):
+ print(whole[nowplayernumber][0])
+ while True:
+ choose1=input("輸入 3 張密碼牌的號碼 以空格區分")
+ check1=choose1.split()
+ if len(check1)!=3:
+ continue
+ ddd=whole[nowplayernumber][0]
+ eee=nowplayernumber
+ checka=choose1.split()[0]
+ checkb=choose1.split()[1]
+ checkc=choose1.split()[2]
+ if checka.isnumeric:
+ checka=int(checka)
+ elif checka =="joker":
+ checka=9
+ else:
+ print("第一個輸入不為數字或 joker!")
+ if checkb.isnumeric:
+ checkb=int(checkb)
+ elif checkb =="joker":
+ checkb=9
+ else:
+ print("第二個輸入不為數字或 joker!")
+ if checkc.isnumeric:
+ checkc=int(checkc)
+ elif checkc =="joker":
+ checkc=9
+ else:
+ print("第三個輸入不為數字或 joker!")
+ if check(checka)==1 :
+ if check(checkb)==1:
+ if check(checkc)==1:
+ whole[nowplayernumber][0].remove(checka)
+ whole[nowplayernumber][0].remove(checkb)
+ whole[nowplayernumber][0].remove(checkc)
+ whole[nowplayernumber][1]=[checka,checkb,checkc]
+ nowplayernumber+=1
+ if nowplayernumber!=eee:
+ break
+ else:
+ whole[nowplayernumber][0]=ddd
+ nowplayernumber=eee
+ print("輸入在手牌中且以空格區分")
+def declare(target,number1):
+ if number1 in whole[target][1]:
+ return "success1"
+ else:
+ return "fail1"
+def nondeclare(nowplayer2,number2):
+ nowplayernumber+=1
+ for aa in range(3):
+ if nowplayernumber==4:
+ nowplayernumber=0
+ choose=input("是否進行響應，輸入 yes 或 no")
+ if choose=="yes":
+ if number2 in whole[nowplayernumber][1]== True:
+ return "fail2" #被響應者失敗
+ aaa=nowplayernumber
+ break
+ else:
+ return "false"
+ else:
+ continue
+ return "success"
+print("遊戲開始")
+nowplayernumber=0
+while True:
+ print("現在是 player"+str(nowplayernumber+1)+"的回合")
+ print("這是你的手牌")
+ print(whole[nowplayernumber][0])
+ while True:
+ choose2=input("輸入玩家數字進行宣告，或輸入 5 被響應")
+ if choose2.isnumeric():
+ choose2=int(choose2)
+ else:
+ print(type(choose2))
+ print("輸入值非整數!")
+ if ((choose2==1 or choose2==2 or choose2==3 or choose2 ==4 )and
+choose2!=nowplayernumber) ==True:
+ break
+ print("玩家不存在!")
+ while True:
+ card=input("選擇要打出的手牌")
+ if card.isnumeric():
+ card=int(card)
+ else:
+ print("輸入值非整數!")
+ if check(card) == True:
+ break
+ if choose2 == 5:
+ while True:
+ if nondeclare(nowplyer0,card) != "false":
+ break
+ whole[nowplayernuber][0].remove(card)
+ if nondeclare(nowplyer0,card) == "success":
+ whole[nowplayernuber][3]+=3
+ whole[nowplayernuber][4]+=card
+ else:
+ whole[aaa][3]+=4
+ whole[aaa][4]+=card*2
+ whole[aaa][1].remove(card)
+ while True:
+ print(whole[aaa][0])
+ bbb=input("選擇一張手牌加入密碼牌")
+ if bbb.isnumeric():
+ bbb=int(bbb)
+ else:
+ print("輸入值不為整數!")
+ if bbb in whole[aaa][0] ==True:
+ whole[aaa][0].remove(bbb)
+ whole[aaa][1].append(bbb)
+ cc=whole[aaa][2].pop[0]
+ whole[aaa][0].append(cc)
+ break
+ else:
+ print("輸入值不在手牌!")
+ elif declare(choose2-1,card) =="success1":
+ whole[nowplayernumber][0].remove(card)
+ whole[nowplayernumber][3]+=5
+ whole[nowplayernumber][4]+=card*2
+ while True:
+ print(whole[choose2-1][0])
+ bbb=input("選擇一張手牌加入密碼牌") #被宣告玩家補牌
+ if bbb.isnumeric():
+ bbb=int(bbb)
+ else:
+ print("輸入值不為整數!")
+ if bbb in whole[choose2-1][0]:
+ whole[choose2-1][0].remove(bbb)
+ whole[choose2-1][1].append(bbb)
+ cc=whole[choose2-1][2].pop[0]
+ whole[choose2-1][0].append(cc)
+ break
+ else:
+ print("輸入值不在手牌!")
+ elif declare(choose2-1,card) =="fail1":
+ whole[nowplayernuber][0].remove(card)
+ whole[choose2-1][3]+=4
+ whole[choose2-1][4]+=card
+ else:
+ print("error!!!")
+ print(whole
